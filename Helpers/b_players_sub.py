@@ -13,7 +13,7 @@ class PlayersSubMenu:
         print("2 - Add Player")
         print("3 - Search Player")
         print("4 - Filter")
-        print("5 - Exit")
+        print("5 - Back")
 
     def show_players_list(self):
         # Code to fetch and display the list of players from the database
@@ -32,6 +32,74 @@ class PlayersSubMenu:
                 break
             else:
                 print("Invalid Command")
+                
+    def add_player(self):
+        name = input("Enter player name: ")
+        rating = int(input("Enter player rating: "))
+        cursor = self.connection.cursor()
+        insert_query = "INSERT INTO players (name, rating) VALUES (%s, %s)"
+        cursor.execute(insert_query, (name, rating))
+        self.connection.commit()
+        print("Successfully added player.")
+        cursor.close()
+        
+    def search_player(self):
+        while True:
+            name = input("Enter Name: ")
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT * FROM players WHERE name = %s", (name,))
+            player = cursor.fetchone()
+            if player:
+                print(f"Player found: ID - {player[0]}, Name - {player[1]}, Rating - {player[2]}")
+            else:
+                print("Player not found.")
+            cursor.close()
+
+            while True:
+                option = input("1 - Search Again, 2 - Exit: ")
+                if option == "1":
+                    break  # Break inner loop to prompt for a new search
+                elif option == "2":
+                    return  # Exit the search player function
+                else:
+                    print("Invalid input. Please select a valid option.")
+
+    def filter_players(self):
+        print("Filter Menu:")
+        print("1 - More")
+        print("2 - Less")
+        choice = input("Enter your choice: ")
+        if choice == "1":
+            threshold = int(input("Enter Rating Threshold: "))
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT * FROM players WHERE rating > %s", (threshold,))
+            players = cursor.fetchall()
+            print("Players with rating more than", threshold, ":")
+            for player in players:
+                print(player)
+            cursor.close()
+        elif choice == "2":
+            threshold = int(input("Enter Rating Threshold: "))
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT * FROM players WHERE rating < %s", (threshold,))
+            players = cursor.fetchall()
+            print("Players with rating less than", threshold, ":")
+            for player in players:
+                print(player)
+            cursor.close()
+        else:
+            print("Invalid choice.")
+
+        while True:
+            exit_input = input("Type 'Exit' to return back to Players Sub-Menu: ")
+            if exit_input.lower() == "exit":
+                break
+            else:
+                print("Invalid input. Please type 'Exit' to return to the Player Sub-Menu.")
+
+    def exit_menu(self):
+        print("Exiting Players Sub-Menu.")
+        return
 
     def handle_players_menu(self):
         while True:
@@ -55,25 +123,3 @@ class PlayersSubMenu:
                 break
             else:
                 print("Invalid choice. Please select a valid option.")
-                
-    def add_player(self):
-        name = input("Enter player name: ")
-        rating = int(input("Enter player rating: "))
-        cursor = self.connection.cursor()
-        insert_query = "INSERT INTO players (name, rating) VALUES (%s, %s)"
-        cursor.execute(insert_query, (name, rating))
-        self.connection.commit()
-        print("Successfully added player.")
-        cursor.close()
-        
-    def search_player(self):
-        # Code to search for a player
-        pass
-
-    def filter_players(self):
-        # Code to filter players based on criteria
-        pass
-
-    def exit_menu(self):
-        self.connection.close()
-        print("Exiting Players Sub-Menu.")
