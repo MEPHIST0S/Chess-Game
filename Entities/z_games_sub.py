@@ -153,14 +153,19 @@ class GamesSubMenu:
             print("Invalid date format or value. Please use format: 'YYYY-MM-DD'.")
             return False
 
-        # Code to add the new game to the table
+        # Fetch the next available game ID
         cursor = self.connection.cursor()
-        insert_query = "INSERT INTO games (player1_id, player2_id, result, date_played) VALUES (%s, %s, %s, %s)"
-        game_data = (player1_id, player2_id, game_result, game_date)
+        cursor.execute("SELECT MAX(game_id) FROM games")
+        max_game_id = cursor.fetchone()[0]
+        new_game_id = max_game_id + 1 if max_game_id is not None else 1
+
+        # Code to add the new game to the table
+        insert_query = "INSERT INTO games (game_id, player1_id, player2_id, result, date_played) VALUES (%s, %s, %s, %s, %s)"
+        game_data = (new_game_id, player1_id, player2_id, game_result, game_date)
         cursor.execute(insert_query, game_data)
         self.connection.commit()
         cursor.close()
-        print("Game added successfully.")
+        print(f"Game added successfully with ID: {new_game_id}")
         return True
 
     def update_game(self):
@@ -200,8 +205,31 @@ class GamesSubMenu:
         print("Game updated successfully.")
 
     def delete_game(self):
-        # Code to delete an existing game
-        pass
+        # Display a list of all games
+        cursor = self.connection.cursor()
+        display_games_history(cursor, self.connection)
+        cursor.close()
+    
+        # Prompt the user to select a game to delete
+        game_id_to_delete = input("Enter the Game ID you want to delete, or type 'Exit' to return to the Games Menu: ")
+
+        # Check if the user wants to exit
+        if game_id_to_delete.lower() == 'exit':
+            return
+
+        # Validate game ID
+        if not game_id_to_delete.isdigit():
+            print("Invalid game ID. Please enter a valid Game ID.")
+            return
+
+        # Delete the game record from the database
+        cursor = self.connection.cursor()
+        delete_query = "DELETE FROM games WHERE game_id = %s"
+        cursor.execute(delete_query, (game_id_to_delete,))
+        self.connection.commit()
+        cursor.close()
+        
+        print("Game deleted successfully.")
 
     def handle_games_menu(self):
         while True:
