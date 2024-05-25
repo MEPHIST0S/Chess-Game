@@ -1,5 +1,5 @@
-from Helpers.a_menu import Menu
-from Helpers.b_players_sub import PlayersSubMenu
+from Entities.x_menu import Menu
+from Entities.y_players_sub import PlayersSubMenu
 
 main_menu = Menu()
 players_submenu = PlayersSubMenu()

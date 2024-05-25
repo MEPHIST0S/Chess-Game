@@ -1,5 +1,5 @@
 # Entities/game.py
-from connection import get_connection
+from Helpers.connection import get_connection
 
 class Game:
     def __init__(self, game_id, player1_id, player2_id, result, date_played):

@@ -1,4 +1,4 @@
-from connection import get_connection
+from Helpers.connection import get_connection
 
 def create_tables():
     connection = get_connection()

@@ -1,5 +1,5 @@
 import mysql.connector
-from connection import get_connection
+from Helpers.connection import get_connection
 
 class PlayersSubMenu:
     def __init__(self):

@@ -1,5 +1,5 @@
 # Entities/move.py
-from connection import get_connection
+from Helpers.connection import get_connection
 
 class Move:
     def __init__(self, move_id, game_id, move_number, move_text):
