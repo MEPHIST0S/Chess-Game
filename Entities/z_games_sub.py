@@ -1,6 +1,11 @@
 import mysql.connector
-from Helpers.connection import get_connection
 import datetime
+
+from Helpers.connection import get_connection
+from Helpers.validate_player import PlayerValidator
+from Helpers.validate_game_res import GameResultValidator
+from Helpers.validate_date import DateValidator
+from Helpers.cash_games import display_games_history
 
 class GamesSubMenu:
     def __init__(self):
@@ -11,7 +16,10 @@ class GamesSubMenu:
         print("Games Menu:")
         print("1 - Games History")
         print("2 - Filter")
-        print("3 - Exit")
+        print("3 - Add Game")
+        print("4 - Update Game")
+        print("5 - Delete Game")
+        print("6 - Exit")
 
     def show_games_history(self):
         # Code to display games history
@@ -81,6 +89,120 @@ class GamesSubMenu:
             else:
                 print("Invalid input. Please type 'Exit' to return.")
 
+    def add_game(self):
+        # Display players ID and name table
+        self.display_players_table()
+
+        # Prompt user to enter player 1 ID
+        player1_id = input("Enter Player 1 ID: ")
+        # Prompt user to enter player 2 ID
+        player2_id = input("Enter Player 2 ID: ")
+
+        # Validate player IDs
+        if not PlayerValidator.validate_player_id(player1_id) or not PlayerValidator.validate_player_id(player2_id):
+            print("Invalid player IDs. Please enter valid player IDs.")
+            return
+
+        # Prompt user to enter game result
+        game_result = input("Enter game result (1-0, 0-1, or 0.5-0.5): ")
+        # Validate game result format
+        if not GameResultValidator.validate_game_result(game_result):
+            print("Invalid game result format. Please enter the result in the correct format.")
+            return
+
+        # Prompt user to enter date
+        game_date = input("Enter game date (YYYY-MM-DD): ")
+        # Validate date format and logical consistency
+        if not DateValidator.validate_date(game_date):
+            print("Invalid date format or logical inconsistency. Please enter a valid date.")
+            return
+
+        # Add the new game to the table
+        self.add_game_to_table(player1_id, player2_id, game_result, game_date)
+
+    def display_players_table(self):
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT player_id, name FROM players")
+        players = cursor.fetchall()
+        cursor.close()
+
+        # Define headers
+        headers = ["Player ID", "Name"]
+        header_format = "{:<12} {:<20}"
+        row_format = "{:<12} {:<20}"
+
+        # Print headers
+        print(header_format.format(*headers))
+        print("="*32)  # Separator line
+
+        # Print each player's ID and name in a formatted manner
+        for player in players:
+            player_id, name = player
+            print(row_format.format(player_id, name))
+
+        return players
+    
+    def add_game_to_table(self, player1_id, player2_id, game_result, game_date):
+        # Validate game result format
+        if not GameResultValidator.validate_game_result(game_result):
+            print("Invalid game result format. Please use format: '1-0', '0-1', or '0.5-0.5'.")
+            return False
+
+        # Validate game date
+        if not DateValidator.validate_date(game_date):
+            print("Invalid date format or value. Please use format: 'YYYY-MM-DD'.")
+            return False
+
+        # Code to add the new game to the table
+        cursor = self.connection.cursor()
+        insert_query = "INSERT INTO games (player1_id, player2_id, result, date_played) VALUES (%s, %s, %s, %s)"
+        game_data = (player1_id, player2_id, game_result, game_date)
+        cursor.execute(insert_query, game_data)
+        self.connection.commit()
+        cursor.close()
+        print("Game added successfully.")
+        return True
+
+    def update_game(self):
+        # Display a list of all games
+        cursor = self.connection.cursor()
+        display_games_history(cursor, self.connection)
+        cursor.close()
+    
+        # Prompt the user to select a game to update
+        game_id_to_update = input("Enter the Game ID you want to update, or type 'Exit' to return to the Games Menu: ")
+
+        # Check if the user wants to exit
+        if game_id_to_update.lower() == 'exit':
+            return
+
+        # Validate game ID
+        if not game_id_to_update.isdigit():
+            print("Invalid game ID. Please enter a valid Game ID.")
+            return
+
+        # Prompt the user to enter the new result for the selected game
+        new_result = input("Enter the new result for the game (1-0, 0-1, or 0.5-0.5): ")
+
+        # Validate the new result format
+        if not GameResultValidator.validate_game_result(new_result):
+            print("Invalid game result format. Please enter the result in the correct format.")
+            return
+
+        # Update the game record in the database
+        cursor = self.connection.cursor()
+        update_query = "UPDATE games SET result = %s WHERE game_id = %s"
+        update_data = (new_result, game_id_to_update)
+        cursor.execute(update_query, update_data)
+        self.connection.commit()
+        cursor.close()
+        
+        print("Game updated successfully.")
+
+    def delete_game(self):
+        # Code to delete an existing game
+        pass
+
     def handle_games_menu(self):
         while True:
             self.show_games_menu()
@@ -90,6 +212,12 @@ class GamesSubMenu:
             elif choice == "2":
                 self.filter_games()
             elif choice == "3":
+                self.add_game()
+            elif choice == "4":
+                self.update_game()
+            elif choice == "5":
+                self.delete_game()
+            elif choice == "6":
                 return  # Exit to main menu
             else:
-                print("Invalid choice. Please select a valid option.") 
+                print("Invalid choice. Please select a valid option.")        
