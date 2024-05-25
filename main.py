@@ -1,8 +1,10 @@
 from Entities.x_menu import Menu
 from Entities.y_players_sub import PlayersSubMenu
+from Entities.z_games_sub import GamesSubMenu
 
 main_menu = Menu()
 players_submenu = PlayersSubMenu()
+games_submenu = GamesSubMenu()
 
 def main():
     while True:
@@ -13,7 +15,7 @@ def main():
             players_submenu.handle_players_menu()
         elif choice == '2':
             # Handle Games option
-            pass
+            games_submenu.handle_games_menu()
         elif choice == '3':
             # Handle Moves History option
             pass
