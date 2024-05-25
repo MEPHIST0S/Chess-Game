@@ -1,3 +1,4 @@
+import mysql.connector
 from connection import get_connection
 
 class PlayersSubMenu:
@@ -56,9 +57,15 @@ class PlayersSubMenu:
                 print("Invalid choice. Please select a valid option.")
                 
     def add_player(self):
-        # Code to add a new player
-        pass
-
+        name = input("Enter player name: ")
+        rating = int(input("Enter player rating: "))
+        cursor = self.connection.cursor()
+        insert_query = "INSERT INTO players (name, rating) VALUES (%s, %s)"
+        cursor.execute(insert_query, (name, rating))
+        self.connection.commit()
+        print("Successfully added player.")
+        cursor.close()
+        
     def search_player(self):
         # Code to search for a player
         pass
@@ -68,5 +75,5 @@ class PlayersSubMenu:
         pass
 
     def exit_menu(self):
-        # Return to the main menu
-        return
+        self.connection.close()
+        print("Exiting Players Sub-Menu.")
