@@ -13,7 +13,9 @@ class PlayersSubMenu:
         print("2 - Add Player")
         print("3 - Search Player")
         print("4 - Filter")
-        print("5 - Back")
+        print("5 - Update Player Data")
+        print("6 - Delete Player")
+        print("7 - Exit")
 
     def show_players_list(self):
         # Code to fetch and display the list of players from the database
@@ -96,6 +98,31 @@ class PlayersSubMenu:
                 break
             else:
                 print("Invalid input. Please type 'Exit' to return to the Player Sub-Menu.")
+                
+    def update_player(self):
+        player_id = input("Enter Player ID to update: ")
+        new_name = input("Enter new name: ")
+        new_rating = input("Enter new rating: ")
+        cursor = self.connection.cursor()
+        cursor.execute("UPDATE players SET name = %s, rating = %s WHERE player_id = %s", (new_name, new_rating, player_id))
+        self.connection.commit()
+        cursor.close()
+        print("Player data updated successfully.")
+
+    def delete_player(self):
+        player_id = input("Enter Player ID to delete: ")
+        cursor = self.connection.cursor()
+        cursor.execute("DELETE FROM players WHERE player_id = %s", (player_id,))
+        self.connection.commit()
+        cursor.close()
+        print("Player deleted successfully.")
+
+        # Reset auto-increment value
+        reset_auto_increment_query = "ALTER TABLE players AUTO_INCREMENT = 1;"
+        cursor = self.connection.cursor()
+        cursor.execute(reset_auto_increment_query)
+        self.connection.commit()
+        cursor.close()              
 
     def exit_menu(self):
         print("Exiting Players Sub-Menu.")
@@ -119,6 +146,10 @@ class PlayersSubMenu:
             elif choice == "4":
                 self.filter_players()
             elif choice == "5":
+                self.update_player()
+            elif choice == "6":
+                self.delete_player()
+            elif choice == "7":
                 self.exit_menu()
                 break
             else:

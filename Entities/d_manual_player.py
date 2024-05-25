@@ -20,7 +20,13 @@ def add_players():
         ("David", 1380),
         ("Emily", 1525),
         ("George", 1410),
-        ("Helen", 1470)
+        ("Helen", 1470),
+        ("Jason", 1750),
+        ("Carlos", 1580),
+        ("Donatello", 1125),
+        ("Cesar", 1010),
+        ("Atilla", 1370)
+        
     ]
     for name, rating in new_players:
         player = Player(None, name, rating)
