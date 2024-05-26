@@ -2,10 +2,14 @@ import mysql.connector
 import datetime
 
 from Helpers.connection import get_connection
+from Helpers.cash_games import display_games_history
+from Helpers.cash_players import CashPlayers
+
 from Helpers.validate_player import PlayerValidator
 from Helpers.validate_game_res import GameResultValidator
 from Helpers.validate_date import DateValidator
-from Helpers.cash_games import display_games_history
+from Helpers.validate_player_name import ValidatingPlayerName
+from Helpers.validate_player_rating import ValidatingPlayerRating
 
 class PlayersSubMenu:
     def __init__(self):
@@ -142,14 +146,44 @@ class PlayersSubMenu:
                 print("Invalid input. Please type 'Exit' to return to the Player Sub-Menu.")
                 
     def update_player(self):
+        # Display players' ID and name table
+        CashPlayers.display_players_table(self)
+
+        # Prompt user to enter player ID to update
         player_id = input("Enter Player ID to update: ")
+
+        # Check if the entered ID is valid
+        if not PlayerValidator.validate_player_id(player_id):
+            print("Invalid player ID. Please enter a valid Player ID.")
+            return
+
+        # Prompt user to enter new name
         new_name = input("Enter new name: ")
+        # Validate new name
+        if not ValidatingPlayerName.validate_name(new_name):
+            print("Invalid name. Please enter letters only.")
+            return
+
+        # Prompt user to enter new rating
         new_rating = input("Enter new rating: ")
-        cursor = self.connection.cursor()
-        cursor.execute("UPDATE players SET name = %s, rating = %s WHERE player_id = %s", (new_name, new_rating, player_id))
-        self.connection.commit()
-        cursor.close()
-        print("Player data updated successfully.")
+        # Validate new rating
+        if not ValidatingPlayerRating.validate_rating(new_rating):
+            print("Invalid rating. Rating must be an integer between 0 and 10000.")
+            return
+
+        # Update player data in the database
+        try:
+            cursor = self.connection.cursor()
+            cursor.execute("UPDATE players SET name = %s, rating = %s WHERE player_id = %s", (new_name, new_rating, player_id))
+            self.connection.commit()
+            print("Player data updated successfully.")
+
+        except mysql.connector.Error as error:
+            print(f"Error updating player data: {error}")
+
+        finally:
+            if cursor:
+                cursor.close()
 
     def delete_player(self):
         player_id = input("Enter Player ID to delete: ")
