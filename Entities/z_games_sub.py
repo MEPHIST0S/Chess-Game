@@ -25,32 +25,39 @@ class GamesSubMenu:
         print("6 - Exit")
 
     def show_games_history(self):
-        # Code to display games history
         cursor = self.connection.cursor()
-        cursor.execute("SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played FROM games g JOIN players p1 ON g.player1_id = p1.player_id JOIN players p2 ON g.player2_id = p2.player_id")
+        cursor.execute("""
+            SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played
+            FROM games g
+            JOIN players p1 ON g.player1_id = p1.player_id
+            JOIN players p2 ON g.player2_id = p2.player_id
+        """)
         games = cursor.fetchall()
-        cursor.close()
 
-        # Define headers
         headers = ["Game ID", "Player 1 Name", "Player 2 Name", "Result", "Date"]
         header_format = "{:<10} {:<20} {:<20} {:<8} {:<12}"
         row_format = "{:<10} {:<20} {:<20} {:<8} {:<12}"
 
-        # Print headers
         print(header_format.format(*headers))
-        print("="*70)  # Separator line
+        print("="*70)
 
-        # Print each game in a formatted manner
         for game in games:
             game_id, player1_name, player2_name, result, date = game
             date_str = date.strftime("%Y-%m-%d") if isinstance(date, datetime.date) else str(date)
             print(row_format.format(game_id, player1_name, player2_name, result, date_str))
 
-        # Loop to handle 'Exit' input
+            # Fetch and display moves for each game
+            cursor.execute("SELECT move_text FROM moves WHERE game_id = %s ORDER BY move_number", (game_id,))
+            moves = cursor.fetchall()
+            moves_texts = [move[0] for move in moves]
+            print(f"Moves: {', '.join(moves_texts)}")
+        
+        cursor.close()
+
         while True:
             exit_input = input("Type 'Exit' to return back to Games Sub-Menu: ")
             if exit_input.lower() == "exit":
-                return  # Return to Games Sub-Menu
+                return
             else:
                 print("Invalid Command. Please type 'Exit' to return back to Games Sub-Menu.")
 
@@ -138,17 +145,12 @@ class GamesSubMenu:
     def add_moves_to_database(self, game_id, moves):
         try:
             cursor = self.connection.cursor()
-
             insert_query = "INSERT INTO moves (game_id, move_text, move_number) VALUES (%s, %s, %s)"
-            
             cursor.executemany(insert_query, moves)
             self.connection.commit()
-
             print("Moves added successfully.")
-
         except mysql.connector.Error as error:
             print(f"Error adding moves: {error}")
-
         finally:
             if self.connection.is_connected():
                 cursor.close()
@@ -242,31 +244,39 @@ class GamesSubMenu:
         print("Game updated successfully.")
 
     def delete_game(self):
-        # Display a list of all games
-        cursor = self.connection.cursor()
-        display_games_history(cursor, self.connection)
-        cursor.close()
-    
-        # Prompt the user to select a game to delete
-        game_id_to_delete = input("Enter the Game ID you want to delete, or type 'Exit' to return to the Games Menu: ")
+        try:
+            # Display a list of all games
+            cursor = self.connection.cursor()
+            display_games_history(cursor, self.connection)
+            
+            # Prompt the user to select a game to delete
+            game_id_to_delete = input("Enter the Game ID you want to delete, or type 'Exit' to return to the Games Menu: ")
 
-        # Check if the user wants to exit
-        if game_id_to_delete.lower() == 'exit':
-            return
+            # Check if the user wants to exit
+            if game_id_to_delete.lower() == 'exit':
+                cursor.close()
+                return
 
-        # Validate game ID
-        if not game_id_to_delete.isdigit():
-            print("Invalid game ID. Please enter a valid Game ID.")
-            return
+            # Validate game ID
+            if not game_id_to_delete.isdigit():
+                print("Invalid game ID. Please enter a valid Game ID.")
+                cursor.close()
+                return
 
-        # Delete the game record from the database
-        cursor = self.connection.cursor()
-        delete_query = "DELETE FROM games WHERE game_id = %s"
-        cursor.execute(delete_query, (game_id_to_delete,))
-        self.connection.commit()
-        cursor.close()
-        
-        print("Game deleted successfully.")
+            # Delete the moves associated with the game
+            delete_moves_query = "DELETE FROM moves WHERE game_id = %s"
+            cursor.execute(delete_moves_query, (game_id_to_delete,))
+
+            # Delete the game record from the database
+            delete_query = "DELETE FROM games WHERE game_id = %s"
+            cursor.execute(delete_query, (game_id_to_delete,))
+            
+            self.connection.commit()
+            cursor.close()
+            
+            print("Game and associated moves deleted successfully.")
+        except mysql.connector.Error as err:
+            print("Error deleting game:", err)
 
     def handle_games_menu(self):
         while True:
