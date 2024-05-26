@@ -1,4 +1,5 @@
 import mysql.connector
+from mysql.connector import Error
 import datetime
 
 from Helpers.connection import get_connection
@@ -37,14 +38,6 @@ class PlayersSubMenu:
             print(player)
         cursor.close()
 
-        # Prompt the user to type 'exit' to return back to Player Sub-Menu
-        while True:
-            exit_input = input("Type 'Exit' to return back to Player Sub-Menu: ")
-            if exit_input.lower() == "exit":
-                break
-            else:
-                print("Invalid Command")
-                
     def add_player(self):
         # Prompt the user to enter the player's name
         while True:
@@ -66,12 +59,10 @@ class PlayersSubMenu:
 
         # Add the player to the database
         self.add_player_to_table(name, int(rating))
-        print("Player added successfully.")
-    
+
     def add_player_to_table(self, name, rating):
         try:
-            connection = get_connection()
-            cursor = connection.cursor()
+            cursor = self.connection.cursor()
 
             # SQL query to insert the player into the database
             insert_query = "INSERT INTO players (name, rating) VALUES (%s, %s)"
@@ -79,17 +70,18 @@ class PlayersSubMenu:
 
             # Execute the query
             cursor.execute(insert_query, player_data)
-            connection.commit()
+            self.connection.commit()
 
             print("Player added successfully.")
+
+            # Call show_players_list to refresh the list
 
         except mysql.connector.Error as error:
             print(f"Error adding player: {error}")
 
         finally:
-            if connection.is_connected():
+            if self.connection.is_connected():
                 cursor.close()
-                connection.close()
         
     def search_player(self):
         while True:
@@ -147,7 +139,7 @@ class PlayersSubMenu:
                 
     def update_player(self):
         # Display the updated list of players after the update operation
-        self.show_players_list()
+        CashPlayers.display_players_table(self)
 
         # Prompt user to enter player ID to update
         player_id = input("Enter Player ID to update: ")
@@ -186,19 +178,37 @@ class PlayersSubMenu:
                 cursor.close()
 
     def delete_player(self):
-        player_id = input("Enter Player ID to delete: ")
-        cursor = self.connection.cursor()
-        cursor.execute("DELETE FROM players WHERE player_id = %s", (player_id,))
-        self.connection.commit()
-        cursor.close()
-        print("Player deleted successfully.")
+        # Display the list of players with their IDs
+        CashPlayers.display_players_table(self)
 
-        # Reset auto-increment value
-        reset_auto_increment_query = "ALTER TABLE players AUTO_INCREMENT = 1;"
-        cursor = self.connection.cursor()
-        cursor.execute(reset_auto_increment_query)
-        self.connection.commit()
-        cursor.close()              
+        # Prompt user to enter Player ID to delete
+        player_id = input("Enter Player ID to delete: ")
+
+        # Delete player based on the provided Player ID
+        try:
+            cursor = self.connection.cursor()
+
+            # Check if the entered ID is valid
+            if not PlayerValidator.validate_player_id(player_id):
+                print("Invalid player ID. Please enter a valid Player ID.")
+                return
+
+            # Execute the delete query
+            cursor.execute("DELETE FROM players WHERE player_id = %s", (player_id,))
+            self.connection.commit()
+            print("Player deleted successfully.")
+
+            # Reset auto-increment value
+            reset_auto_increment_query = "ALTER TABLE players AUTO_INCREMENT = 1;"
+            cursor.execute(reset_auto_increment_query)
+            self.connection.commit()
+
+        except mysql.connector.Error as error:
+            print(f"Error deleting player: {error}")
+
+        finally:
+            if cursor:
+                cursor.close()         
 
     def exit_menu(self):
         print("Exiting Players Sub-Menu.")
