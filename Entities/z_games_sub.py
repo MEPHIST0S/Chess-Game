@@ -255,4 +255,4 @@ class GamesSubMenu:
             elif choice == "6":
                 return  # Exit to main menu
             else:
-                print("Invalid choice. Please select a valid option.")        
+                print("Invalid choice. Please select a valid option.")  
