@@ -93,6 +93,9 @@ class GamesSubMenu:
                 print("Invalid input. Please type 'Exit' to return.")
 
     def add_game(self):
+        
+        self.display_players_table()
+        
         player1_id = input("Enter Player 1 ID: ")
         player2_id = input("Enter Player 2 ID: ")
         game_result = input("Enter game result (1-0, 0-1, or 0.5-0.5): ")
