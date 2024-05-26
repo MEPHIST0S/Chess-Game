@@ -2,10 +2,13 @@ import mysql.connector
 import datetime
 
 from Helpers.connection import get_connection
+from Helpers.cash_games import display_games_history
+
 from Helpers.validate_player import PlayerValidator
 from Helpers.validate_game_res import GameResultValidator
 from Helpers.validate_date import DateValidator
-from Helpers.cash_games import display_games_history
+from Helpers.validate_game_id import GameIDValidator
+
 
 class GamesSubMenu:
     def __init__(self):
@@ -175,24 +178,28 @@ class GamesSubMenu:
         cursor.close()
     
         # Prompt the user to select a game to update
-        game_id_to_update = input("Enter the Game ID you want to update, or type 'Exit' to return to the Games Menu: ")
+        while True:
+            game_id_to_update = input("Enter the Game ID you want to update, or type 'Exit' to return to the Games Menu: ")
 
-        # Check if the user wants to exit
-        if game_id_to_update.lower() == 'exit':
-            return
+            # Check if the user wants to exit
+            if game_id_to_update.lower() == 'exit':
+                return
 
-        # Validate game ID
-        if not game_id_to_update.isdigit():
-            print("Invalid game ID. Please enter a valid Game ID.")
-            return
+            # Validate game ID using the GameIDValidator
+            if GameIDValidator.validate_game_id(game_id_to_update, self.connection):
+                break
+            else:
+                print("Invalid Game ID. Please enter a valid Game ID.")
 
         # Prompt the user to enter the new result for the selected game
-        new_result = input("Enter the new result for the game (1-0, 0-1, or 0.5-0.5): ")
+        while True:
+            new_result = input("Enter the new result for the game (1-0, 0-1, or 0.5-0.5): ")
 
-        # Validate the new result format
-        if not GameResultValidator.validate_game_result(new_result):
-            print("Invalid game result format. Please enter the result in the correct format.")
-            return
+            # Validate the new result format using GameResultValidator
+            if GameResultValidator.validate_game_result(new_result):
+                break
+            else:
+                print("Invalid game result format. Please enter the result in the correct format.")
 
         # Update the game record in the database
         cursor = self.connection.cursor()
