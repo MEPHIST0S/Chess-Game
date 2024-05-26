@@ -146,8 +146,8 @@ class PlayersSubMenu:
                 print("Invalid input. Please type 'Exit' to return to the Player Sub-Menu.")
                 
     def update_player(self):
-        # Display players' ID and name table
-        CashPlayers.display_players_table(self)
+        # Display the updated list of players after the update operation
+        self.show_players_list()
 
         # Prompt user to enter player ID to update
         player_id = input("Enter Player ID to update: ")
