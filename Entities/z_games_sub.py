@@ -8,7 +8,7 @@ from Helpers.validate_player import PlayerValidator
 from Helpers.validate_game_res import GameResultValidator
 from Helpers.validate_date import DateValidator
 from Helpers.validate_game_id import GameIDValidator
-
+from Helpers.validate_move import MovesValidation
 
 class GamesSubMenu:
     def __init__(self):
@@ -93,35 +93,62 @@ class GamesSubMenu:
                 print("Invalid input. Please type 'Exit' to return.")
 
     def add_game(self):
-        # Display players ID and name table
-        self.display_players_table()
-
-        # Prompt user to enter player 1 ID
         player1_id = input("Enter Player 1 ID: ")
-        # Prompt user to enter player 2 ID
         player2_id = input("Enter Player 2 ID: ")
-
-        # Validate player IDs
-        if not PlayerValidator.validate_player_id(player1_id) or not PlayerValidator.validate_player_id(player2_id):
-            print("Invalid player IDs. Please enter valid player IDs.")
-            return
-
-        # Prompt user to enter game result
         game_result = input("Enter game result (1-0, 0-1, or 0.5-0.5): ")
-        # Validate game result format
-        if not GameResultValidator.validate_game_result(game_result):
-            print("Invalid game result format. Please enter the result in the correct format.")
-            return
-
-        # Prompt user to enter date
         game_date = input("Enter game date (YYYY-MM-DD): ")
-        # Validate date format and logical consistency
-        if not DateValidator.validate_date(game_date):
-            print("Invalid date format or logical inconsistency. Please enter a valid date.")
-            return
+        
+        new_game_id = self.add_game_to_table(player1_id, player2_id, game_result, game_date)
+        
+        if new_game_id:
+            print("Adding moves for the game...")
+            moves = []
+            for i in range(1, 9):  # Assuming you want to add 8 moves
+                move = input(f"Enter move {i} for the game: ")
+                moves.append((new_game_id, move, i))
+            self.add_moves_to_database(new_game_id, moves)
+            print(f"Game added successfully with ID: {new_game_id}")
 
-        # Add the new game to the table
-        self.add_game_to_table(player1_id, player2_id, game_result, game_date)
+    def get_last_game_id(self):
+            cursor = self.connection.cursor()
+            cursor.execute("SELECT MAX(game_id) FROM games")
+            max_game_id = cursor.fetchone()[0]
+            cursor.close()
+            return max_game_id if max_game_id is not None else 0
+
+    def add_moves_for_game(self, game_id):
+        print("Adding moves for the game...")
+        moves = []
+        for i in range(1, 9):  # Limiting to 8 moves per game
+            move = input(f"Enter move {i} for the game: ")
+            # Validate move format (You need to implement this)
+            if not MovesValidation.validate_move(move):
+                print("Invalid move format. Please enter a valid move.")
+                continue
+            moves.append((game_id, move))
+
+        # Store moves in the database
+        if moves:
+            self.add_moves_to_database(moves)
+            print("Moves added successfully.")
+
+    def add_moves_to_database(self, game_id, moves):
+        try:
+            cursor = self.connection.cursor()
+
+            insert_query = "INSERT INTO moves (game_id, move_text, move_number) VALUES (%s, %s, %s)"
+            
+            cursor.executemany(insert_query, moves)
+            self.connection.commit()
+
+            print("Moves added successfully.")
+
+        except mysql.connector.Error as error:
+            print(f"Error adding moves: {error}")
+
+        finally:
+            if self.connection.is_connected():
+                cursor.close()
 
     def display_players_table(self):
         cursor = self.connection.cursor()
@@ -149,12 +176,12 @@ class GamesSubMenu:
         # Validate game result format
         if not GameResultValidator.validate_game_result(game_result):
             print("Invalid game result format. Please use format: '1-0', '0-1', or '0.5-0.5'.")
-            return False
+            return None  # Return None if validation fails
 
         # Validate game date
         if not DateValidator.validate_date(game_date):
             print("Invalid date format or value. Please use format: 'YYYY-MM-DD'.")
-            return False
+            return None  # Return None if validation fails
 
         # Fetch the next available game ID
         cursor = self.connection.cursor()
@@ -169,7 +196,7 @@ class GamesSubMenu:
         self.connection.commit()
         cursor.close()
         print(f"Game added successfully with ID: {new_game_id}")
-        return True
+        return new_game_id  # Return the new game ID
 
     def update_game(self):
         # Display a list of all games
