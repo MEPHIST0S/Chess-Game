@@ -21,9 +21,6 @@ def main():
         elif choice == '3':
             # Handle Moves History option
             moves_submenu.handle_moves_menu()
-        elif choice == '4':
-            # Handle Play option
-            pass
         else:
             print("Invalid choice. Please select a valid option.")
 
