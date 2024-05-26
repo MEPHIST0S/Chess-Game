@@ -42,14 +42,50 @@ class PlayersSubMenu:
                 print("Invalid Command")
                 
     def add_player(self):
-        name = input("Enter player name: ")
-        rating = int(input("Enter player rating: "))
-        cursor = self.connection.cursor()
-        insert_query = "INSERT INTO players (name, rating) VALUES (%s, %s)"
-        cursor.execute(insert_query, (name, rating))
-        self.connection.commit()
-        print("Successfully added player.")
-        cursor.close()
+        # Prompt the user to enter the player's name
+        while True:
+            name = input("Enter Name: ")
+            if not name.isalpha():
+                print("Invalid input. Please enter a valid name.")
+            else:
+                break
+
+        # Prompt the user to enter the player's rating
+        while True:
+            rating = input("Enter Rating (0-10000): ")
+            if not rating.isdigit():
+                print("Invalid input. Please enter a valid rating.")
+            elif not (0 <= int(rating) <= 10000):
+                print("Invalid rating. Rating must be between 0 and 10000.")
+            else:
+                break
+
+        # Add the player to the database
+        self.add_player_to_table(name, int(rating))
+        print("Player added successfully.")
+    
+    def add_player_to_table(self, name, rating):
+        try:
+            connection = get_connection()
+            cursor = connection.cursor()
+
+            # SQL query to insert the player into the database
+            insert_query = "INSERT INTO players (name, rating) VALUES (%s, %s)"
+            player_data = (name, rating)
+
+            # Execute the query
+            cursor.execute(insert_query, player_data)
+            connection.commit()
+
+            print("Player added successfully.")
+
+        except mysql.connector.Error as error:
+            print(f"Error adding player: {error}")
+
+        finally:
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
         
     def search_player(self):
         while True:
