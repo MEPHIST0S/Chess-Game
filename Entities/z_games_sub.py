@@ -65,24 +65,52 @@ class GamesSubMenu:
         print("Filter Games:")
         print("1 - Wins")
         print("2 - Draws")
+        print("3 - Data")
         filter_choice = input("Enter your choice: ")
         
         if filter_choice == "1":
             self.show_filtered_games("wins")
         elif filter_choice == "2":
             self.show_filtered_games("draws")
+        elif filter_choice == "3":
+            from_date = input("Enter From Date (YYYY-MM-DD): ")
+            to_date = input("Enter To Date (YYYY-MM-DD): ")
+            self.show_filtered_games("date", from_date, to_date)
         else:
             print("Invalid choice. Please select a valid option.")
 
-    def show_filtered_games(self, filter_type):
+    def show_filtered_games(self, filter_type, from_date=None, to_date=None):
         cursor = self.connection.cursor()
         
         if filter_type == "wins":
-            cursor.execute("SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played FROM games g JOIN players p1 ON g.player1_id = p1.player_id JOIN players p2 ON g.player2_id = p2.player_id WHERE g.result IN ('1-0', '0-1')")
+            cursor.execute("""
+                SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played 
+                FROM games g 
+                JOIN players p1 ON g.player1_id = p1.player_id 
+                JOIN players p2 ON g.player2_id = p2.player_id 
+                WHERE g.result IN ('1-0', '0-1')
+            """)
         elif filter_type == "draws":
-            cursor.execute("SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played FROM games g JOIN players p1 ON g.player1_id = p1.player_id JOIN players p2 ON g.player2_id = p2.player_id WHERE g.result = '0.5-0.5'")
-        
+            cursor.execute("""
+                SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played 
+                FROM games g 
+                JOIN players p1 ON g.player1_id = p1.player_id 
+                JOIN players p2 ON g.player2_id = p2.player_id 
+                WHERE g.result = '0.5-0.5'
+            """)
+        elif filter_type == "date":
+            cursor.execute("""
+                SELECT g.game_id, p1.name as player1_name, p2.name as player2_name, g.result, g.date_played 
+                FROM games g 
+                JOIN players p1 ON g.player1_id = p1.player_id 
+                JOIN players p2 ON g.player2_id = p2.player_id 
+                WHERE g.date_played BETWEEN %s AND %s
+            """, (from_date, to_date))
+
         games = cursor.fetchall()
+        
+        wins = 0
+        draws = 0
         
         print(f"{'Game ID':<10} {'Player 1 Name':<20} {'Player 2 Name':<20} {'Result':<8} {'Date':<12}")
         print("=" * 70)
@@ -91,6 +119,16 @@ class GamesSubMenu:
             game_id, player1_name, player2_name, result, date = game
             date_str = date.strftime("%Y-%m-%d") if isinstance(date, datetime.date) else str(date)
             print(f"{game_id:<10} {player1_name:<20} {player2_name:<20} {result:<8} {date_str:<12}")
+            
+            if result in ('1-0', '0-1'):
+                wins += 1
+            elif result == '0.5-0.5':
+                draws += 1
+        
+        if filter_type == "date":
+            print(f"\nTotal games: {len(games)}")
+            print(f"Wins: {wins}")
+            print(f"Draws: {draws}")
         
         while True:
             exit_input = input("Type 'Exit' to return back to Games Sub-Menu: ")
