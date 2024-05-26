@@ -1,5 +1,11 @@
 import mysql.connector
+import datetime
+
 from Helpers.connection import get_connection
+from Helpers.validate_player import PlayerValidator
+from Helpers.validate_game_res import GameResultValidator
+from Helpers.validate_date import DateValidator
+from Helpers.cash_games import display_games_history
 
 class PlayersSubMenu:
     def __init__(self):
