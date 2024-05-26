@@ -184,13 +184,22 @@ class PlayersSubMenu:
         # Prompt user to enter Player ID to delete
         player_id = input("Enter Player ID to delete: ")
 
-        # Delete player based on the provided Player ID
         try:
             cursor = self.connection.cursor()
 
             # Check if the entered ID is valid
             if not PlayerValidator.validate_player_id(player_id):
                 print("Invalid player ID. Please enter a valid Player ID.")
+                return
+
+            # Check if the player is referenced in the games table
+            cursor.execute("SELECT COUNT(*) FROM games WHERE player1_id = %s OR player2_id = %s", (player_id, player_id))
+            count = cursor.fetchone()[0]
+
+            if count > 0:
+                print(f"Player ID {player_id} is referenced in {count} game(s). Please handle these references before deleting the player.")
+                # Optional: You can ask the user if they want to delete the related games or update them to reference another player
+                # Here we are just returning without deleting to let the user handle it manually
                 return
 
             # Execute the delete query
@@ -208,7 +217,7 @@ class PlayersSubMenu:
 
         finally:
             if cursor:
-                cursor.close()         
+                cursor.close()      
 
     def exit_menu(self):
         print("Exiting Players Sub-Menu.")
